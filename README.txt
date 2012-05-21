@@ -22,7 +22,7 @@ and then
 
 And you should see the output of the simulation.
 
-Any question or suggestion send an email to aortega@alu.itba.edu.ar
+Any question or suggestion send an email to aortega@alu.itba.edu.ar, cc: alfred@groundworkstech.com
 
 Cheers,
 
