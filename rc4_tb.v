@@ -35,16 +35,15 @@ parameter tck = 10, program_cycles = `TEST_CYCLES;
 
 reg clk, rst; // clock, reset
 wire output_ready; // output ready (valid)
-
 wire [7:0] K; // output
 reg [7:0] password_input; //input
-//wire [7:0] Kreg; // output
 
-//assign Kreg=K;
 /* Clocking device */
 always #(tck/2) 
 	clk = ~clk;
 
+
+/* Password loader and info display*/
 integer clkcount;
 always @ (posedge clk)
 	begin

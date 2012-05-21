@@ -90,7 +90,7 @@ always @ (posedge clk or posedge rst)
 				j <= (j + S[i] + key[i % `KEY_SIZE]);
 				KSState <= `KSS_KEYSCHED3;
 				end
-		`KSS_KEYSCHED3:	begin
+		`KSS_KEYSCHED3:	begin // KSS_KEYSCHED3: S array permutation
 				S[i]<=S[j];
 				S[j]<=S[i];
 				if (i == 8'hFF)
@@ -105,7 +105,8 @@ always @ (posedge clk or posedge rst)
 					end
 				end
 
-		`KSS_CRYPTO:	begin // It was all nicely pipelined until this point where I don't care anymore
+		`KSS_CRYPTO:	begin // KSS_CRYPTO: Output crypto stream
+				// It was all nicely pipelined until this point where I don't care anymore
 				i = i + 1;
 				j = (j + S[i]);
 				temp = S[j];
