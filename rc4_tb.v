@@ -1,4 +1,21 @@
-/* RC4 PRGA Testbench */
+/* 
+	RC4 PRGA Testbench 
+	Copyright 2012 - Alfredo Ortega
+	aortega@alu.itba.edu.ar
+
+ This library is free software: you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation, either
+ version 3 of the License, or (at your option) any later version.
+ 
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+ 
+ You should have received a copy of the GNU Lesser General Public
+ License along with this library.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 `define RC4
 
@@ -7,116 +24,61 @@
 `define TEST_CYCLES 2000
 `endif
 
-`define KEY_SIZE 8
-
-module rc4;
-endmodule
+`include "rc4.inc"
 
 module rc4_tb;
 
+reg [7:0] password[0:`KEY_SIZE-1];
 
 parameter tck = 10, program_cycles = `TEST_CYCLES;
 
 
 reg clk, rst; // clock, reset
+wire output_ready; // output ready (valid)
 
+wire [7:0] K; // output
+reg [7:0] password_input; //input
+//wire [7:0] Kreg; // output
 
-
+//assign Kreg=K;
 /* Clocking device */
 always #(tck/2) 
 	clk = ~clk;
 
-integer clkcount=0;
+integer clkcount;
 always @ (posedge clk)
 	begin
-	clkcount=clkcount+1;
-		$display ("--- clk %d ---",clkcount);
-	end
-
-/* RC4 PRGA */
-
-// S array
-reg [7:0] S[0:256];
-// Key
-reg [7:0] key[0:`KEY_SIZE-1];
-
-// Key-scheduling state
-`define KSS_KEYSCHED1 4'h1
-`define KSS_KEYSCHED2 4'h2
-`define KSS_KEYSCHED3 4'h3
-`define KSS_CRYPTO 4'h4
-
-// Variable names from http://en.wikipedia.org/wiki/RC4
-reg [3:0] KSState;
-reg [7:0] i; // Counter
-reg [7:0] j;
-reg [7:0] temp;
-reg [7:0] K;
-reg KS_Finished;
-always @ (posedge clk or posedge rst)
-	begin
-	if (rst)
+	clkcount<=clkcount+1;
+	if (clkcount < `KEY_SIZE)
 		begin
-		i <= 8'h0;
-		KSState <= `KSS_KEYSCHED1;
-		KS_Finished <= 0;
-		j <= 0; 
+		password_input<=password[clkcount];
+		$display ("--- clk %d --- key[%x] = %08X",clkcount,clkcount,password[clkcount]);
 		end
-	case (KSState)
-		`KSS_KEYSCHED1:	begin
-				S[i] <= i;
-				if (i == 8'hFF)
-					begin
-					KSState <= `KSS_KEYSCHED2;
-					i <= 8'h00;
-					end
-				else	i <= i +1;
-				end
-		`KSS_KEYSCHED2:	begin
-				j <= (j + S[i] + key[i % `KEY_SIZE]);
-				KSState <= `KSS_KEYSCHED3;
-				end
-		`KSS_KEYSCHED3:	begin
-				S[i]<=S[j];
-				S[j]<=S[i];
-				if (i == 8'hFF)
-					begin
-					KSState <= `KSS_CRYPTO;
-					KS_Finished <= 1; // Flag keysched finished
-					i <= 8'h00;
-					end
-				else	begin
-					i <= i + 1;
-					KSState <= `KSS_KEYSCHED2;
-					end
-				end
-
-		`KSS_CRYPTO:	begin // It was all nicely pipelined until this point where I don't care anymore
-				i = i + 1;
-				j = (j + S[i]);
-				temp = S[j];
-				S[j]=S[i];
-				S[i]=temp;
-				K = S[ S[i]+S[j] ];
-				$display ("KSS_CRYPTO: K: %d",K);
-				end
-		default:	begin
-				end
-	endcase
+	else $display ("--- clk %d --- K %08X",clkcount,K);
 	end
 
+
+/* rc4 module implementation */
+rc4 rc4mod(
+	.clk(clk),
+	.rst(rst),
+	.password_input(password_input),
+	.output_ready(output_ready),
+	.K(K)
+);
 
 
 /* Simulation */
 integer q;
 initial begin
-	for (q=0; q<`KEY_SIZE; q=q+1) key[q] = 8'h42; // initialize Key
+	for (q=0; q<`KEY_SIZE; q=q+1) password[q] = 8'h42; // initialize Key
 	$display ("Start...");
-	clk <= 0;
-	KSState <= 8'h0; // Init key-schedule state
-	rst <= 1;
+	clk = 0;
+	rst = 1;
+	clkcount =0;
+	password_input=password[clkcount];
 	#(1*tck) 
-	rst <= 0;
+	rst = 0;
 	#(program_cycles*tck+100) 
 	$display ("Finish.");
 	$finish;
