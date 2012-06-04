@@ -70,7 +70,13 @@ rc4 rc4mod(
 /* Simulation */
 integer q;
 initial begin
-	for (q=0; q<`KEY_SIZE; q=q+1) password[q] = 8'h42; // initialize Key
+	password[0] = 8'h53; // 'S'
+	password[1] = 8'h65; // 'e'
+	password[2] = 8'h63; // 'c'
+	password[3] = 8'h72; // 'r'
+	password[4] = 8'h65; // 'e'
+	password[5] = 8'h74; // 't'
+	// Test vector: "Secret" --> "04 d4 6b 05 3c a8 7b 59"
 	$display ("Start...");
 	clk = 0;
 	rst = 1;
