@@ -18,7 +18,7 @@
 */
 
 
-`include "rc4.inc"
+`include "/home/alfred/docto/FPGADesign/rc4-prbs/trunk/rc4.inc"
 
 module rc4(clk,rst,output_ready,password_input,K);
 
@@ -46,13 +46,12 @@ reg [7:0] S[0:256];
 `define KSS_KEYSCHED1 4'h1
 `define KSS_KEYSCHED2 4'h2
 `define KSS_KEYSCHED3 4'h3
-`define KSS_CRYPTO 4'h4
-
+`define KSS_CRYPTO 	 4'h4
+`define KSS_CRYPTO2	 4'h5
 // Variable names from http://en.wikipedia.org/wiki/RC4
 reg [3:0] KSState;
 reg [7:0] i; // Counter
 reg [7:0] j;
-reg [7:0] temp;
 reg [7:0] K;
 
 always @ (posedge clk or posedge rst)
@@ -64,6 +63,7 @@ always @ (posedge clk or posedge rst)
 		output_ready <= 0;
 		j <= 0; 
 		end
+	else
 	case (KSState)	
 		`KSS_KEYREAD:	begin // KSS_KEYREAD state: Read key from input
 				if (i == `KEY_SIZE)
@@ -77,6 +77,11 @@ always @ (posedge clk or posedge rst)
 					$display ("key[%d] = %08X",i,password_input);
 					end
 				end
+/*
+for i from 0 to 255
+    S[i] := i
+endfor
+*/
 		`KSS_KEYSCHED1:	begin // KSS_KEYSCHED1: Increment counter for S initialization
 				S[i] <= i;
 				if (i == 8'hFF)
@@ -86,6 +91,13 @@ always @ (posedge clk or posedge rst)
 					end
 				else	i <= i +1;
 				end
+/*		
+j := 0
+for i from 0 to 255
+    j := (j + S[i] + key[i mod keylength]) mod 256
+    swap values of S[i] and S[j]
+endfor
+*/
 		`KSS_KEYSCHED2:	begin // KSS_KEYSCHED2: Initialize S array
 				j <= (j + S[i] + key[i % `KEY_SIZE]);
 				KSState <= `KSS_KEYSCHED3;
@@ -96,23 +108,37 @@ always @ (posedge clk or posedge rst)
 				if (i == 8'hFF)
 					begin
 					KSState <= `KSS_CRYPTO;
-					output_ready <= 1; // Flag keysched finished
-					i <= 8'h00;
+					i <= 8'h01;
+					j <= 8'h00;
 					end
 				else	begin
 					i <= i + 1;
 					KSState <= `KSS_KEYSCHED2;
 					end
 				end
-
-		`KSS_CRYPTO:	begin // KSS_CRYPTO: Output crypto stream
-				// It was all nicely pipelined until this point where I don't care anymore
-				i = i + 1;
-				j = (j + S[i]);
-				temp = S[j];
-				S[j]=S[i];
-				S[i]=temp;
-				K = S[ S[i]+S[j] ];
+/*				
+i := 0
+j := 0
+while GeneratingOutput:
+    i := (i + 1) mod 256
+    j := (j + S[i]) mod 256
+    swap values of S[i] and S[j]
+    K := S[(S[i] + S[j]) mod 256]
+    output K
+endwhile
+*/
+		`KSS_CRYPTO: begin	//KSS_CRYPTO: Output crypto stream
+				j <= (j + S[i]);
+				KSState <= `KSS_CRYPTO2;
+				output_ready <= 0; // K not valid yet
+				end
+		`KSS_CRYPTO2: begin
+				S[i] <= S[j];
+				S[j] <= S[i]; // We can do this because of verilog.
+				K <= S[ S[i]+S[j] ];
+				output_ready <= 1; // Valid K at output
+				i <= i+1;
+				KSState <= `KSS_CRYPTO;
 				end
 		default:	begin
 				end

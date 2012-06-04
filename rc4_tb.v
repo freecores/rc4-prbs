@@ -53,7 +53,7 @@ always @ (posedge clk)
 		password_input<=password[clkcount];
 		$display ("--- clk %d --- key[%x] = %08X",clkcount,clkcount,password[clkcount]);
 		end
-	else $display ("--- clk %d --- K %08X",clkcount,K);
+	else $display ("--- clk %d --- K %08X --- valid: ",clkcount,K,output_ready);
 	end
 
 
