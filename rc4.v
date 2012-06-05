@@ -18,7 +18,7 @@
 */
 
 
-`include "rc4.inc"
+`include "/home/alfred/docto/FPGADesign/rc4-prbs/trunk/rc4.inc"
 
 module rc4(clk,rst,output_ready,password_input,K);
 
@@ -40,6 +40,7 @@ wire [7:0] password_input;
 reg [7:0] key[0:`KEY_SIZE-1];
 // S array
 reg [7:0] S[0:256];
+reg [9:0] discardCount;
 
 // Key-scheduling state
 `define KSS_KEYREAD 4'h0
@@ -110,6 +111,7 @@ endfor
 					KSState <= `KSS_CRYPTO;
 					i <= 8'h01;
 					j <= 8'h00;
+					discardCount <= 10'h0;
 					end
 				else	begin
 					i <= i + 1;
@@ -136,7 +138,9 @@ endwhile
 				S[i] <= S[j];
 				S[j] <= S[i]; // We can do this because of verilog.
 				K <= S[ S[i]+S[j] ];
-				output_ready <= 1; // Valid K at output
+				if (discardCount<1000)
+					discardCount<=discardCount+1;
+				else	output_ready <= 1; // Valid K at output
 				i <= i+1;
 				KSState <= `KSS_CRYPTO;
 				end
