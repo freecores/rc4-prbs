@@ -28,3 +28,7 @@ Any question or suggestion send an email to aortega@alu.itba.edu.ar, cc: alfred@
 Cheers,
 
 Alfredo
+
+
+PS: This is licensed LGPL, not public domain or BSD, so you should, put a copy of the license in your software and stuff. Yes, I'm talking to you jhunjhun, you too have to do it.
+
