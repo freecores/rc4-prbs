@@ -18,4 +18,4 @@
 */
 
 
-`define KEY_SIZE 8
+`define KEY_SIZE 7

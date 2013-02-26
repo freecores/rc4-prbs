@@ -2,6 +2,7 @@
 	RC4 PRGA module implementation
 	Copyright 2012 - Alfredo Ortega
 	aortega@alu.itba.edu.ar
+	aortega@groundworkstech.com
 
  This library is free software: you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
@@ -18,7 +19,7 @@
 */
 
 
-`include "rc4.inc"
+`include "/home/guest/docto/FPGADesign/rc4-prbs/trunk/rc4.inc"
 
 module rc4(clk,rst,output_ready,password_input,K);
 
@@ -48,7 +49,6 @@ reg [9:0] discardCount;
 `define KSS_KEYSCHED2 4'h2
 `define KSS_KEYSCHED3 4'h3
 `define KSS_CRYPTO 	 4'h4
-`define KSS_CRYPTO2	 4'h5
 // Variable names from http://en.wikipedia.org/wiki/RC4
 reg [3:0] KSState;
 reg [7:0] i; // Counter
@@ -75,7 +75,7 @@ always @ (posedge clk or posedge rst)
 				else	begin
 					i <= i+1;
 					key[i] <= password_input;
-					$display ("key[%d] = %08X",i,password_input);
+					$display ("rc4: key[%d] = %08X",i,password_input);
 					end
 				end
 /*
@@ -110,8 +110,9 @@ endfor
 					begin
 					KSState <= `KSS_CRYPTO;
 					i <= 8'h01;
-					j <= 8'h00;
+					j <= S[1];
 					discardCount <= 10'h0;
+					output_ready <= 0; // K not valid yet
 					end
 				else	begin
 					i <= i + 1;
@@ -129,20 +130,21 @@ while GeneratingOutput:
     output K
 endwhile
 */
-		`KSS_CRYPTO: begin	//KSS_CRYPTO: Output crypto stream
-				j <= (j + S[i]);
-				KSState <= `KSS_CRYPTO2;
-				output_ready <= 0; // K not valid yet
-				end
-		`KSS_CRYPTO2: begin
+		`KSS_CRYPTO: begin
 				S[i] <= S[j];
 				S[j] <= S[i]; // We can do this because of verilog.
 				K <= S[ S[i]+S[j] ];
-				if (discardCount<1000)
+				if (discardCount<10'h3E8) // discard first 1000 values
 					discardCount<=discardCount+1;
 				else	output_ready <= 1; // Valid K at output
 				i <= i+1;
-				KSState <= `KSS_CRYPTO;
+				// Here is the secret of 1-clock: we develop all possible values of j in the future
+				if (j==i+1) 
+   				     j <= (j + S[i]);
+				else 
+					if (i==255) j <= (j + S[0]);
+						else j <= (j + S[i+1]);
+				$display ("rc4: output = %08X",K);
 				end
 		default:	begin
 				end
