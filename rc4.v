@@ -19,7 +19,7 @@
 */
 
 
-`include "/home/guest/docto/FPGADesign/rc4-prbs/trunk/rc4.inc"
+`include "rc4.inc"
 
 module rc4(clk,rst,output_ready,password_input,K);
 
