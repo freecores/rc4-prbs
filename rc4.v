@@ -41,7 +41,7 @@ wire [7:0] password_input;
 reg [7:0] key[0:`KEY_SIZE-1];
 // S array
 reg [7:0] S[0:256];
-reg [9:0] discardCount;
+reg [10:0] discardCount;
 
 // Key-scheduling state
 `define KSS_KEYREAD 4'h0
@@ -111,7 +111,7 @@ endfor
 					KSState <= `KSS_CRYPTO;
 					i <= 8'h01;
 					j <= S[1];
-					discardCount <= 10'h0;
+					discardCount <= 11'h0;
 					output_ready <= 0; // K not valid yet
 					end
 				else	begin
@@ -134,7 +134,7 @@ endwhile
 				S[i] <= S[j];
 				S[j] <= S[i]; // We can do this because of verilog.
 				K <= S[ S[i]+S[j] ];
-				if (discardCount<10'h3E8) // discard first 1000 values
+				if (discardCount<11'h600) // discard first 1536 values / RFC 4345
 					discardCount<=discardCount+1;
 				else	output_ready <= 1; // Valid K at output
 				i <= i+1;
@@ -144,7 +144,7 @@ endwhile
 				else 
 					if (i==255) j <= (j + S[0]);
 						else j <= (j + S[i+1]);
-				$display ("rc4: output = %08X",K);
+				//$display ("rc4: output = %08X",K);
 				end
 		default:	begin
 				end
