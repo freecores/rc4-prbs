@@ -11,6 +11,8 @@ It's quite easy to use:
 5) Now you should start receiving the pseudo-random stream via the output bus, one byte every clock. The output_ready signal signals when a valid byte is present at the output K.
 To encrypt or decrypt using RC4 you simply xor your data with the output stream.
 
+WARNING: The 256-byte register that this implementation uses is very costly in FPGA resources and will result in >2000 slices used in some synthetizers.
+
 The testbench and makefile work using icarus verilog and you can peer into rc4_tb.v to see an example implementation. 
 
 After installing icarus verilog in your path, just issue:
